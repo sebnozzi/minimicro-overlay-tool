@@ -214,9 +214,13 @@ ensureTextDoesNotScroll = function
 end function
 
 ensureNoKeysPressed = function
-	// Set initially to "true" to simulate a do-while loop
-	anyKeyPressed = true
+	// Consume keys in buffer
+	while key.available
+		key.get
+	end while
 	// Wait for key-presses to be released (key-ups)
+	// Set flag initially to "true" to simulate a do-while loop
+	anyKeyPressed = true
 	while anyKeyPressed
 		anyKeyPressed = false
 		for keyName in key.keyNames
@@ -417,5 +421,5 @@ end function
 // === MAIN INVOCATION
 
 if globals == locals then
-	drawInteractively
+	draw
 end if
