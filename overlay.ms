@@ -7,7 +7,7 @@ DISPLAY_NR=1
 
 COLORS = [color.orange, color.lime, color.fuchsia, color.aqua]
 // Map key to color index
-COLOR_MAP = {
+KEY_COLOR_MAP = {
 "o": 0,
 "g": 1,
 "l": 1,
@@ -175,7 +175,7 @@ Overlay.processKeyEvents = function
 	end if
 	
 	// Process color change (from map)
-	for entry in COLOR_MAP
+	for entry in KEY_COLOR_MAP
 		if self.keyHandler.isKeyDown(entry.key) then
 			self.colorIdx = entry.value
 		end if
