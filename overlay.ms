@@ -51,6 +51,8 @@ MODE_ERASER = "erasing"
 
 Overlay = {}
 Overlay.dsp = null
+Overlay.canvas = null
+Overlay.canvasSprite = null
 Overlay.colorIdx = 0
 Overlay.colors = COLORS
 Overlay.thickness = 2
@@ -66,22 +68,58 @@ Overlay.isRunning = false
 Overlay.setup = function(displayNr)
 	// Setup display
 	freshSetup = true
-	if display(displayNr).mode == displayMode.pixel then
+	if display(displayNr).mode == displayMode.sprite then
 		freshSetup = false
 	end if
-	display(displayNr).mode = displayMode.pixel
+	display(displayNr).mode = displayMode.sprite
 	self.dsp = display(displayNr)
 	// Clear
-	if CLEAR_AT_STARTUP or freshSetup then self.clear
+	if CLEAR_AT_STARTUP or freshSetup then 
+		self.dsp.clear
+	end if
 	// Init
 	self.lastX = -1
 	self.lastY = -1
 	self.mouseDown = false
 	self.keyHandler = new DiscreteEventHandler
+	// Setup canvas
+	self.canvasSprite = new Sprite
+	self.canvas = new PixelDisplay
+	self.canvas.clear color.clear
+	self.canvasSprite.image = self.canvas
+	self.canvasSprite.x = 960 / 2
+	self.canvasSprite.y = 640 / 2
+	self.dsp.sprites.push self.canvasSprite
 end function
 
 Overlay.clear = function
-	self.dsp.fillRect 0,0,960,640,color.clear
+	// self.dsp.fillRect 0,0,960,640,color.clear
+	self.canvas.clear color.clear
+	self.updateCanvas
+end function
+
+Overlay.updateCanvas = function
+	self.canvasSprite.image = self.canvas.getImage(0,0,960,640)
+end function
+
+Overlay.getCurrentImage = function
+	image = self.canvas.getImage(0,0,960,640)
+	return image
+end function
+
+Overlay.drawLine = function(x0,y0,x1,y1,c,t)
+	self.canvas.line x0,y0,x1,y1,c,t
+	self.updateCanvas
+end function
+
+Overlay.clearRect = function(x,y,w,h)
+	self.canvas.fillRect x,y,w,h,color.clear
+	self.updateCanvas
+end function
+
+Overlay.drawImage = function(img,x,y)
+	self.canvas.drawImage img,x,y
+	self.updateCanvas
 end function
 
 // === OVERLAY: COLORS
@@ -139,7 +177,7 @@ Overlay.processMouseEvents = function
 			ly = self.lastY
 			c = self.color
 			t = self.thickness
-			self.dsp.line x,y,lx,ly,c,t
+			self.drawLine x,y,lx,ly,c,t
 			UndoManager.lineDrawn x,y,lx,ly,t
 		end if
 		self.lastX = x
@@ -304,7 +342,7 @@ UndoManager.drawingStarted = function
 	self.minY = 640
 	self.maxX = 0
 	self.maxY = 0
-	self.imgBeforeDrawing = Overlay.dsp.getImage(0,0,960,640)
+	self.imgBeforeDrawing = Overlay.getCurrentImage
 end function
 
 UndoManager.lineDrawn = function(x0,y0,x1,y1,thickness)
@@ -364,8 +402,8 @@ UndoImage.draw = function
 	y = self.y
 	w = img.width
 	h = img.height
-	Overlay.dsp.fillRect x,y,w,h,color.clear
-	Overlay.dsp.drawImage img,x,y
+	Overlay.clearRect x,y,w,h
+	Overlay.drawImage img,x,y
 end function
 
 // === POSITION
