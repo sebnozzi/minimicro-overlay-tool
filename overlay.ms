@@ -197,7 +197,15 @@ Overlay.updateMenu = function
 		fs = fs + "$(W:E)rase "
 	end if
 	// Pen Size
-	fs = fs + "$(W:1-9):size($(SS:" + self.thickness + ")) "
+	fs = fs + "size:"
+	for ps in range(1,9)
+		if ps == self.thickness then
+			fs = fs + "$(WW:" + ps + ")"
+		else
+			fs = fs + "$(W:" + ps + ")"
+		end if
+	end for
+	fs = fs + " "
 	// Orange
 	if self.colorIdx == 0 then
 		fs = fs + "$(WW:O)$(OO:range) "
@@ -223,7 +231,7 @@ Overlay.updateMenu = function
 		fs = fs + "$(W:A)$(A:qua) "
 	end if
 	// Undo + Clear
-	fs = fs + "$(W:Z):Undo $(W:BkSpce):Clear"
+	fs = fs + "$(W:Z):Undo $(W:BkSp):Clear"
 	
 	cs.renderString(0, fs)
 	
