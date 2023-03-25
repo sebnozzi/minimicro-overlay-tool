@@ -5,16 +5,41 @@ CLEAR_AT_EXIT=true
 CLEAR_AT_STARTUP=true
 DISPLAY_NR=1
 
-COLORS = [color.orange, color.lime, color.fuchsia, color.aqua]
+COLORS = [color.orange, color.fuchsia, color.lime, color.aqua]
 
 // Map key to color index
 KEY_COLOR_MAP = {
 "o": 0,
-"g": 1,
-"l": 1,
-"f": 2,
+"g": 2,
+"l": 2,
+"f": 1,
 "a": 3,
 "b": 3}
+
+// Color menu items (normal / selected)
+COLOR_MENU_ITEMS = {
+color.orange: ["$(W:O)$(O:range)", "$(WW:O)$(OO:range)"],
+color.fuchsia: ["$(W:F)$(F:uchsia)", "$(WW:F)$(FF:uchsia)"],
+color.lime: ["$(W:L)$(L:ime)", "$(WW:L)$(LL:ime)"],
+color.aqua: ["$(W:A)$(A:qua)", "$(WW:A)$(AA:qua)"]}
+
+// Map for building the menu's colored-string
+// (null for "default")
+COLORED_STRING_MAPPING = {
+// Normal colors
+"W": [color.white, null],
+"O": [color.orange, null],
+"F": [color.fuchsia, null],
+"L": [color.lime, null],
+"A": [color.aqua, null],
+// Inverted colors
+"SS": [color.black, color.silver],
+"WW": [color.black, color.white],
+"OO": [color.black, color.orange],
+"FF": [color.black, color.fuchsia],
+"LL": [color.black, color.lime],
+"AA": [color.black, color.aqua]}
+
 
 // === PUBLIC API - DRAW INTERACTIVELY
 
@@ -166,19 +191,13 @@ end function
 
 Overlay.updateMenu = function
 	cs = new ColorString
-	// Normal colors
-	cs.mapChar "W", color.white
-	cs.mapChar "O", color.orange
-	cs.mapChar "F", color.fuchsia
-	cs.mapChar "L", color.lime
-	cs.mapChar "A", color.aqua
-	// Inverted colors
-	cs.mapChar "SS", color.black,color.silver
-	cs.mapChar "WW", color.black,color.white
-	cs.mapChar "OO", color.black,color.orange
-	cs.mapChar "FF", color.black,color.fuchsia
-	cs.mapChar "LL", color.black,color.lime
-	cs.mapChar "AA", color.black,color.aqua
+	
+	for mapping in COLORED_STRING_MAPPING
+		colorKey = mapping.key
+		fgColor = mapping.value[0]
+		bgColor = mapping.value[1]
+		cs.mapChar colorKey,fgColor,bgColor
+	end for
 	
 	colorIdx = self.colorIdx
 	
@@ -197,39 +216,26 @@ Overlay.updateMenu = function
 		fs = fs + "$(W:E)rase "
 	end if
 	// Pen Size
-	fs = fs + "size:"
+	fs = fs + "["
 	for ps in range(1,9)
 		if ps == self.thickness then
 			fs = fs + "$(WW:" + ps + ")"
 		else
-			fs = fs + "$(W:" + ps + ")"
+			fs = fs + ps
 		end if
 	end for
-	fs = fs + " "
-	// Orange
-	if self.colorIdx == 0 then
-		fs = fs + "$(WW:O)$(OO:range) "
-	else
-		fs = fs + "$(W:O)$(O:range) "
-	end if
-	// Fuchsia
-	if colorIdx == 2 then
-		fs = fs + "$(WW:F)$(FF:uchsia) "
-	else
-		fs = fs + "$(W:F)$(F:uchsia) "
-	end if
-	// Lime
-	if self.colorIdx == 1 then
-		fs = fs + "$(WW:L)$(LL:ime) "
-	else
-		fs = fs + "$(W:L)$(L:ime) "
-	end if
-	// Aqua
-	if self.colorIdx == 3 then
-		fs = fs + "$(WW:A)$(AA:qua) "
-	else
-		fs = fs + "$(W:A)$(A:qua) "
-	end if
+	fs = fs + "] "
+	// Colors
+	for penColor in COLORS
+		entry = COLOR_MENU_ITEMS[penColor]
+		normal = entry[0]
+		selected = entry[1]
+		if self.color == penColor then
+			fs = fs + selected + " "
+		else
+			fs = fs + normal + " "
+		end if
+	end for
 	// Undo + Clear
 	fs = fs + "$(W:Z):Undo $(W:BkSp):Clear"
 	
