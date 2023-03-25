@@ -6,6 +6,7 @@ CLEAR_AT_STARTUP=true
 DISPLAY_NR=1
 
 COLORS = [color.orange, color.lime, color.fuchsia, color.aqua]
+
 // Map key to color index
 KEY_COLOR_MAP = {
 "o": 0,
@@ -62,6 +63,7 @@ Overlay.mouseDown = false
 Overlay.mode = MODE_PENCIL
 Overlay.isInteractive = false
 Overlay.isRunning = false
+Overlay.menuRow = null
 
 // === OVERLAY: SETUP / CLEAN
 
@@ -90,10 +92,11 @@ Overlay.setup = function(displayNr)
 	self.canvasSprite.x = 960 / 2
 	self.canvasSprite.y = 640 / 2
 	self.dsp.sprites.push self.canvasSprite
+	// Show menu
+	self.showMenu
 end function
 
 Overlay.clear = function
-	// self.dsp.fillRect 0,0,960,640,color.clear
 	self.canvas.clear color.clear
 	self.updateCanvas
 end function
@@ -106,6 +109,8 @@ Overlay.getCurrentImage = function
 	image = self.canvas.getImage(0,0,960,640)
 	return image
 end function
+
+// === OVERLAY: DRAWING OPERATIONS
 
 Overlay.drawLine = function(x0,y0,x1,y1,c,t)
 	self.canvas.line x0,y0,x1,y1,c,t
@@ -144,6 +149,84 @@ toggleMode = function
 	else
 		self.mode = MODE_PENCIL
 	end if
+end function
+
+// === OVERLAY: MENU
+
+Overlay.showMenu = function
+	// Backup row
+	self.menuRow = backupRow(0)
+	// Show menu
+	self.updateMenu
+end function
+
+Overlay.hideMenu = function
+	restoreRow self.menuRow,0
+end function
+
+Overlay.updateMenu = function
+	cs = new ColorString
+	// Normal colors
+	cs.mapChar "W", color.white
+	cs.mapChar "O", color.orange
+	cs.mapChar "F", color.fuchsia
+	cs.mapChar "L", color.lime
+	cs.mapChar "A", color.aqua
+	// Inverted colors
+	cs.mapChar "SS", color.black,color.silver
+	cs.mapChar "WW", color.black,color.white
+	cs.mapChar "OO", color.black,color.orange
+	cs.mapChar "FF", color.black,color.fuchsia
+	cs.mapChar "LL", color.black,color.lime
+	cs.mapChar "AA", color.black,color.aqua
+	
+	colorIdx = self.colorIdx
+	
+	fs = ""
+	
+	// Draw
+	if self.mode == MODE_PENCIL then
+		fs = fs + "$(WW:D)$(SS:raw) "
+	else
+		fs = fs + "$(W:D)raw "
+	end if
+	// Erase
+	if self.mode == MODE_ERASER then
+		fs = fs + "$(WW:E)$(SS:rase) "
+	else
+		fs = fs + "$(W:E)rase "
+	end if
+	// Pen Size
+	fs = fs + "$(W:1-9):size($(SS:" + self.thickness + ")) "
+	// Orange
+	if self.colorIdx == 0 then
+		fs = fs + "$(WW:O)$(OO:range) "
+	else
+		fs = fs + "$(W:O)$(O:range) "
+	end if
+	// Fuchsia
+	if colorIdx == 2 then
+		fs = fs + "$(WW:F)$(FF:uchsia) "
+	else
+		fs = fs + "$(W:F)$(F:uchsia) "
+	end if
+	// Lime
+	if self.colorIdx == 1 then
+		fs = fs + "$(WW:L)$(LL:ime) "
+	else
+		fs = fs + "$(W:L)$(L:ime) "
+	end if
+	// Aqua
+	if self.colorIdx == 3 then
+		fs = fs + "$(WW:A)$(AA:qua) "
+	else
+		fs = fs + "$(W:A)$(A:qua) "
+	end if
+	// Undo + Clear
+	fs = fs + "$(W:Z):Undo $(W:BkSpce):Clear"
+	
+	cs.renderString(0, fs)
+	
 end function
 
 // === OVERLAY: DRAWING
@@ -202,10 +285,13 @@ Overlay.processKeyEvents = function
 		UndoManager.reset
 	else if self.keyHandler.isKeyDown("c") then
 		self.shiftColor
+		self.updateMenu
 	else if self.keyHandler.isKeyDown("e") then
 		self.mode = MODE_ERASER
+		self.updateMenu
 	else if self.keyHandler.isKeyDown("d") then
 		self.mode = MODE_PENCIL
+		self.updateMenu
 	else if self.keyHandler.isKeyDown("z") then
 		UndoManager.performUndo
 	else 
@@ -216,6 +302,7 @@ Overlay.processKeyEvents = function
 	for entry in KEY_COLOR_MAP
 		if self.keyHandler.isKeyDown(entry.key) then
 			self.colorIdx = entry.value
+			self.updateMenu
 		end if
 	end for
 	
@@ -224,6 +311,7 @@ Overlay.processKeyEvents = function
 		keyName = str(thickness)
 		if self.keyHandler.isKeyDown(keyName) then
 			self.thickness = thickness
+			self.updateMenu
 		end if
 	end for
 	
@@ -242,6 +330,7 @@ Overlay.exitProgram = function
 	if CLEAR_AT_EXIT then self.clear
 	ensureTextDoesNotScroll
 	ensureNoKeysPressed
+	self.hideMenu
 end function
 
 ensureTextDoesNotScroll = function
@@ -378,7 +467,7 @@ UndoManager.performUndo = function
 	end if
 end function
 
-// === UndoImage
+// === UNDO-IMAGE
 
 newUndoImage = function(img,x,y)
 	i = new UndoImage
@@ -440,6 +529,8 @@ Position.greaterThan = function(other)
 	return x > ox or y > oy	
 end function
 
+// === MATH FUNCTIONS
+
 min = function(a,b)
 	if a < b then
 		return a
@@ -454,6 +545,225 @@ max = function(a,b)
 	else 
 		return b
 	end if
+end function
+
+// === COLOR-STRING
+
+ColorString = {}
+ColorString.chars = []
+ColorString.defaultFgColor = color.silver
+ColorString.defaultBgColor = color.clear
+ColorString.colorMap = {}
+ColorString.format = "$(:)"
+
+ColorString.fgColor = function(colorKey)
+	entry = self.colorMap[colorKey]
+	return entry.fgColor
+end function
+
+ColorString.bgColor = function(colorKey)
+	entry = self.colorMap[colorKey]
+	return entry.bgColor
+end function
+
+ColorString.mapChar = function(ch,fgColor,bgColor=null)
+	entry = {"fgColor": fgColor, "bgColor": bgColor}
+	self.colorMap[ch] = entry
+end function
+
+ColorString.renderString = function(rowNr, formatString)
+	textRuns = self.parse(formatString)
+	for txtRun in textRuns
+		fgColor = txtRun.fgColor
+		bgColor = txtRun.bgColor
+		colNr = txtRun.colNr
+		for ch in txtRun.text
+			text.setCell colNr,rowNr,ch
+			text.setCellColor colNr,rowNr,fgColor
+			text.setCellBackColor colNr,rowNr,bgColor
+			colNr = colNr + 1
+		end for
+	end for
+end function
+
+ColorString.parse = function(formatString)
+	special = self.format[0]
+	open = self.format[1]
+	switch = self.format[2]
+	close = self.format[3]
+	
+	colNr = 0
+	
+	p = new Parser
+	p.input = formatString
+	
+	colorStringSelf = self
+	newTextRun = @outer.newTextRun
+	
+	parseFormattedOrText = function
+		if p.ch == special then
+			node = parseFormatted
+		else
+			node = parseText
+		end if
+		return node
+	end function
+	
+	parseFormatted = function
+		initialColNr = colNr
+		
+		p.consume(special)
+		p.consume(open)
+		colorKey = p.parseUntil(switch)
+		p.consume(switch)
+		txt = p.parseUntil(close)
+		p.consume(close)
+		
+		fgColor = colorStringSelf.fgColor(colorKey)
+		bgColor = colorStringSelf.bgColor(colorKey)
+		
+		outer.colNr = outer.colNr + txt.len
+		
+		return newTextRun(initialColNr,fgColor,bgColor,txt)
+	end function
+	
+	parseText = function
+		initialColNr = colNr
+		
+		txt = p.parseUntil(special)
+		
+		fgColor = colorStringSelf.defaultFgColor
+		bgColor = colorStringSelf.defaultBgColor
+		
+		outer.colNr = outer.colNr + txt.len
+		
+		return newTextRun(initialColNr,fgColor,bgColor,txt)
+	end function
+	
+	result = p.parse(@parseFormattedOrText)
+	
+	return result
+	
+end function
+
+// === TEXT-RUNS
+
+newTextRun = function(colNr,fgColor,bgColor,txt)
+	tr = new TextRun
+	tr.colNr = colNr
+	tr.fgColor = fgColor
+	tr.bgColor = bgColor
+	tr.text = txt
+	return tr
+end function
+
+TextRun = {}
+TextRun.colNr = 0
+TextRun.fgColor = null
+TextRun.bgColor = null
+TextRun.text = null
+
+// === PARSER
+
+Parser = {}
+Parser.input = ""
+Parser.idx = 0
+
+Parser.ch = function
+	return self.input[self.idx]
+end function
+
+Parser.isDone = function
+	return self.idx >= self.input.len
+end function
+
+Parser.parse = function(rootParser)
+	nodes = []
+	while not self.isDone
+		node = rootParser
+		nodes.push node
+	end while
+	return nodes
+end function
+
+Parser.advance = function
+	self.advanceBy 1
+end function
+
+Parser.advanceBy = function(amount)
+	self.idx = self.idx + amount
+end function
+
+Parser.consume = function(token)
+	if self.peekEquals(token) then
+		self.advanceBy(token.len)
+	else
+		msg = "Token """ + token + """ not found "
+		msg = msg + "at idx " + self.idx + ". "
+		msg = msg + "Found: """ + self.peekN(10) + """"
+		print msg
+		exit
+	end if
+end function
+
+Parser.peekEquals = function(token)
+	return self.peekN(token.len) == token
+end function
+
+Parser.peekN = function(n)
+	startIdx = self.idx
+	endIdx = self.idx + n
+	return self.input[startIdx:endIdx]
+end function
+
+Parser.parseUntil = function(token)
+	result = ""
+	while not self.isDone
+		if self.peekEquals(token) then
+			break
+		end if
+		result = result + self.ch
+		self.advance
+	end while
+	return result
+end function
+
+// === TEXT BACKUP / RESTORE
+
+Cell = {}
+Cell.char = null
+Cell.color = null
+Cell.bgColor = null
+
+backupRow = function(rowNr)
+	rowCells = []
+	for colNr in range(0,67)
+		cell = getCell(colNr,rowNr)
+		rowCells.push cell
+	end for
+	return rowCells	
+end function
+
+getCell = function(colNr, rowNr)
+	c = new Cell
+	c.char = text.cell(colNr,rowNr)
+	c.color = text.cellColor(colNr,rowNr)
+	c.bgColor = text.cellBackColor(colNr,rowNr)
+	return c
+end function
+
+setCell = function(cell, colNr, rowNr)
+	text.setCell colNr,rowNr,cell.char
+	text.setCellColor colNr,rowNr,cell.color
+	text.setCellBackColor colNr,rowNr,cell.bgColor
+end function
+
+restoreRow = function(rowCells,rowNr)
+	colNr = 0
+	for cell in rowCells
+		setCell cell,colNr,rowNr
+		colNr = colNr + 1
+	end for
 end function
 
 // === MAIN INVOCATION
