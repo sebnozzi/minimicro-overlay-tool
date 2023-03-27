@@ -19,7 +19,8 @@ Place the `overlay.ms` file anywhere you want to import it as a module. Either n
 ## Usage
 
 * Draw / erase with the mouse
-* To **draw**: press "d"
+* To draw using the **marker**: press "m"
+* To draw using the **brush**: press "b"
 * To **erase**: press "e"
 * To **quit**: press "q" or ESC
 * To **undo**: press "z"
@@ -69,7 +70,6 @@ You do so by the following steps:
 
 1. Import the module
 2. Invoke the interactive-drawing whenever it suits you
-
 
 Sample code:
 
