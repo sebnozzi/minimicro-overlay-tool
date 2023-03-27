@@ -31,6 +31,7 @@ COLORED_STRING_MAPPING = {
 "F": [color.fuchsia, null],
 "L": [color.lime, null],
 "A": [color.aqua, null],
+"G": [color.gray, null],
 // Inverted colors
 "SS": [color.black, color.silver],
 "WW": [color.black, color.white],
@@ -203,7 +204,7 @@ Overlay.updateMenu = function
 		fs = fs + "$(W:E)rasr "
 	end if
 	// Pen Size
-	fs = fs + "["
+	fs = fs + "$(G:[)"
 	for ps in range(1,9)
 		if ps == self.thickness then
 			fs = fs + "$(WW:" + ps + ")"
@@ -211,7 +212,8 @@ Overlay.updateMenu = function
 			fs = fs + ps
 		end if
 	end for
-	fs = fs + "] "
+	fs = fs + "$(G:])"
+	fs = fs + " "
 	// Colors
 	for penColor in COLORS
 		entry = COLOR_MENU_ITEMS[penColor]
