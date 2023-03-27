@@ -82,6 +82,14 @@ Overlay.setup = function(displayNr)
 	self.lastY = -1
 	self.mouseDown = false
 	self.keyHandler = new DiscreteEventHandler
+	// Setup canvas
+	self.canvasSprite = new Sprite
+	self.canvas = new PixelDisplay
+	self.canvas.clear color.clear
+	self.canvasSprite.image = self.canvas
+	self.canvasSprite.x = 960 / 2
+	self.canvasSprite.y = 640 / 2
+	self.dsp.sprites.push self.canvasSprite
 end function
 
 Overlay.clear = function
