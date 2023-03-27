@@ -68,10 +68,10 @@ Overlay.isRunning = false
 Overlay.setup = function(displayNr)
 	// Setup display
 	freshSetup = true
-	if display(displayNr).mode == displayMode.pixel then
+	if display(displayNr).mode == displayMode.sprite then
 		freshSetup = false
 	end if
-	display(displayNr).mode = displayMode.pixel
+	display(displayNr).mode = displayMode.sprite
 	self.dsp = display(displayNr)
 	// Clear
 	if CLEAR_AT_STARTUP or freshSetup then 
