@@ -4,7 +4,6 @@
 CLEAR_AT_EXIT=true
 CLEAR_AT_STARTUP=true
 DISPLAY_NR=1
-SMOOTH_LINES=false
 
 COLORS = [color.orange, color.fuchsia, color.lime, color.aqua]
 
@@ -14,13 +13,12 @@ KEY_COLOR_MAP = {
 "g": 2,
 "l": 2,
 "f": 1,
-"a": 3,
-"b": 3}
+"a": 3}
 
 // Color menu items (normal / selected)
 COLOR_MENU_ITEMS = {
-color.orange: ["$(W:O)$(O:range)", "$(WW:O)$(OO:range)"],
-color.fuchsia: ["$(W:F)$(F:uchsia)", "$(WW:F)$(FF:uchsia)"],
+color.orange: ["$(W:O)$(O:rng)", "$(WW:O)$(OO:rng)"],
+color.fuchsia: ["$(W:F)$(F:chsia)", "$(WW:F)$(FF:chsia)"],
 color.lime: ["$(W:L)$(L:ime)", "$(WW:L)$(LL:ime)"],
 color.aqua: ["$(W:A)$(A:qua)", "$(WW:A)$(AA:qua)"]}
 
@@ -71,8 +69,9 @@ end function
 K_ESC = "escape"
 K_BACKSPACE = "backspace"
 
-MODE_PENCIL = "drawing"
-MODE_ERASER = "erasing"
+TOOL_MARKER = "marker"
+TOOL_BRUSH = "brush"
+TOOL_ERASER = "eraser"
 
 // === OVERLAY
 
@@ -86,7 +85,7 @@ Overlay.thickness = 2
 Overlay.lastX = -1
 Overlay.lastY = -1
 Overlay.mouseDown = false
-Overlay.mode = MODE_PENCIL
+Overlay.tool = TOOL_MARKER
 Overlay.isInteractive = false
 Overlay.isRunning = false
 Overlay.menuRow = null
@@ -126,13 +125,13 @@ end function
 // === OVERLAY: DRAWING OPERATIONS
 
 Overlay.drawLine = function(x0,y0,x1,y1,c,t)
-	if SMOOTH_LINES then
+	if self.tool == TOOL_BRUSH then
+		self.dsp.line x0,y0,x1,y1,c,t
+	else
 		r = t / 2
 		for p in linePoints([x0,y0],[x1,y1])
 			self.dsp.fillEllipse p[0]-r,p[1]-r,t,t,c
-		end for
-	else
-		self.dsp.line x0,y0,x1,y1,c,t
+		end for	
 	end if
 end function
 
@@ -147,25 +146,15 @@ end function
 // === OVERLAY: COLORS
 
 Overlay.color = function
-	if self.mode == MODE_PENCIL then
-		return self.colors[self.colorIdx]
-	else
+	if self.tool == TOOL_ERASER then
 		return color.clear
+	else
+		return self.colors[self.colorIdx]
 	end if
 end function
 
 Overlay.shiftColor = function(offset=1)
 	self.colorIdx = (self.colorIdx + self.colors.len + offset) % self.colors.len
-end function
-
-// === OVERLAY: MODES
-
-toggleMode = function
-	if self.mode == MODE_PENCIL then 
-		self.mode = MODE_ERASER
-	else
-		self.mode = MODE_PENCIL
-	end if
 end function
 
 // === OVERLAY: MENU
@@ -195,17 +184,23 @@ Overlay.updateMenu = function
 	
 	fs = ""
 	
-	// Draw
-	if self.mode == MODE_PENCIL then
-		fs = fs + "$(WW:D)$(SS:raw) "
+	// Marker
+	if self.tool == TOOL_MARKER then
+		fs = fs + "$(WW:M)$(SS:arker) "
 	else
-		fs = fs + "$(W:D)raw "
+		fs = fs + "$(W:M)arker "
+	end if
+	// Brush
+	if self.tool == TOOL_BRUSH then
+		fs = fs + "$(WW:B)$(SS:rush) "
+	else
+		fs = fs + "$(W:B)rush "
 	end if
 	// Erase
-	if self.mode == MODE_ERASER then
-		fs = fs + "$(WW:E)$(SS:rase) "
+	if self.tool == TOOL_ERASER then
+		fs = fs + "$(WW:E)$(SS:rasr) "
 	else
-		fs = fs + "$(W:E)rase "
+		fs = fs + "$(W:E)rasr "
 	end if
 	// Pen Size
 	fs = fs + "["
@@ -229,7 +224,7 @@ Overlay.updateMenu = function
 		end if
 	end for
 	// Undo + Clear
-	fs = fs + "$(W:Z):Undo $(W:BkSp):Clear"
+	fs = fs + "$(W:Z):Undo $(W:BkSp):Clr"
 	
 	cs.renderString(0, fs)
 	
@@ -293,15 +288,16 @@ Overlay.processKeyEvents = function
 		self.shiftColor
 		self.updateMenu
 	else if self.keyHandler.isKeyDown("e") then
-		self.mode = MODE_ERASER
+		self.tool = TOOL_ERASER
 		self.updateMenu
-	else if self.keyHandler.isKeyDown("d") then
-		self.mode = MODE_PENCIL
+	else if self.keyHandler.isKeyDown("m") then
+		self.tool = TOOL_MARKER
+		self.updateMenu
+	else if self.keyHandler.isKeyDown("b") then
+		self.tool = TOOL_BRUSH
 		self.updateMenu
 	else if self.keyHandler.isKeyDown("z") then
 		UndoManager.performUndo
-	else 
-		// print key.pressed
 	end if
 	
 	// Process color change (from map)
