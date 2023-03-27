@@ -93,7 +93,33 @@ Overlay.setup = function(displayNr)
 end function
 
 Overlay.clear = function
-	self.dsp.fillRect 0,0,960,640,color.clear
+	// self.dsp.fillRect 0,0,960,640,color.clear
+	self.canvas.clear color.clear
+	self.updateCanvas
+end function
+
+Overlay.updateCanvas = function
+	self.canvasSprite.image = self.canvas.getImage(0,0,960,640)
+end function
+
+Overlay.getCurrentImage = function
+	image = self.canvas.getImage(0,0,960,640)
+	return image
+end function
+
+Overlay.drawLine = function(x0,y0,x1,y1,c,t)
+	self.canvas.line x0,y0,x1,y1,c,t
+	self.updateCanvas
+end function
+
+Overlay.clearRect = function(x,y,w,h)
+	self.canvas.fillRect x,y,w,h,color.clear
+	self.updateCanvas
+end function
+
+Overlay.drawImage = function(img,x,y)
+	self.canvas.drawImage img,x,y
+	self.updateCanvas
 end function
 
 // === OVERLAY: COLORS
