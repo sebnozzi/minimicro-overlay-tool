@@ -51,6 +51,8 @@ MODE_ERASER = "erasing"
 
 Overlay = {}
 Overlay.dsp = null
+Overlay.canvas = null
+Overlay.canvasSprite = null
 Overlay.colorIdx = 0
 Overlay.colors = COLORS
 Overlay.thickness = 2
