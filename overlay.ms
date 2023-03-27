@@ -95,61 +95,45 @@ Overlay.menuRow = null
 Overlay.setup = function(displayNr)
 	// Setup display
 	freshSetup = true
-	if display(displayNr).mode == displayMode.sprite then
+	if display(displayNr).mode == displayMode.pixel then
 		freshSetup = false
 	end if
-	display(displayNr).mode = displayMode.sprite
+	display(displayNr).mode = displayMode.pixel
 	self.dsp = display(displayNr)
 	// Clear
 	if CLEAR_AT_STARTUP or freshSetup then 
-		self.dsp.clear
+		self.clear
 	end if
 	// Init
 	self.lastX = -1
 	self.lastY = -1
 	self.mouseDown = false
 	self.keyHandler = new DiscreteEventHandler
-	// Setup canvas
-	self.canvasSprite = new Sprite
-	self.canvas = new PixelDisplay
-	self.canvas.clear color.clear
-	self.canvasSprite.image = self.canvas
-	self.canvasSprite.x = 960 / 2
-	self.canvasSprite.y = 640 / 2
-	self.dsp.sprites.push self.canvasSprite
 	// Show menu
 	self.showMenu
 end function
 
 Overlay.clear = function
-	self.canvas.clear color.clear
-	self.updateCanvas
-end function
-
-Overlay.updateCanvas = function
-	self.canvasSprite.image = self.canvas.getImage(0,0,960,640)
+	self.dsp.clear color.clear
 end function
 
 Overlay.getCurrentImage = function
-	image = self.canvas.getImage(0,0,960,640)
+	image = self.dsp.getImage(0,0,960,640)
 	return image
 end function
 
 // === OVERLAY: DRAWING OPERATIONS
 
 Overlay.drawLine = function(x0,y0,x1,y1,c,t)
-	self.canvas.line x0,y0,x1,y1,c,t
-	self.updateCanvas
+	self.dsp.line x0,y0,x1,y1,c,t
 end function
 
 Overlay.clearRect = function(x,y,w,h)
-	self.canvas.fillRect x,y,w,h,color.clear
-	self.updateCanvas
+	self.dsp.fillRect x,y,w,h,color.clear
 end function
 
 Overlay.drawImage = function(img,x,y)
-	self.canvas.drawImage img,x,y
-	self.updateCanvas
+	self.dsp.drawImage img,x,y
 end function
 
 // === OVERLAY: COLORS
