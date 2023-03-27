@@ -139,7 +139,7 @@ Overlay.processMouseEvents = function
 			ly = self.lastY
 			c = self.color
 			t = self.thickness
-			self.dsp.line x,y,lx,ly,c,t
+			self.drawLine x,y,lx,ly,c,t
 			UndoManager.lineDrawn x,y,lx,ly,t
 		end if
 		self.lastX = x
@@ -304,7 +304,7 @@ UndoManager.drawingStarted = function
 	self.minY = 640
 	self.maxX = 0
 	self.maxY = 0
-	self.imgBeforeDrawing = Overlay.dsp.getImage(0,0,960,640)
+	self.imgBeforeDrawing = Overlay.getCurrentImage
 end function
 
 UndoManager.lineDrawn = function(x0,y0,x1,y1,thickness)
@@ -364,8 +364,8 @@ UndoImage.draw = function
 	y = self.y
 	w = img.width
 	h = img.height
-	Overlay.dsp.fillRect x,y,w,h,color.clear
-	Overlay.dsp.drawImage img,x,y
+	Overlay.clearRect x,y,w,h
+	Overlay.drawImage img,x,y
 end function
 
 // === POSITION
