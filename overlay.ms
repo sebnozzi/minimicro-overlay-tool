@@ -4,6 +4,7 @@
 CLEAR_AT_EXIT=true
 CLEAR_AT_STARTUP=true
 DISPLAY_NR=1
+SMOOTH_LINES=false
 
 COLORS = [color.orange, color.fuchsia, color.lime, color.aqua]
 
@@ -125,7 +126,14 @@ end function
 // === OVERLAY: DRAWING OPERATIONS
 
 Overlay.drawLine = function(x0,y0,x1,y1,c,t)
-	self.dsp.line x0,y0,x1,y1,c,t
+	if SMOOTH_LINES then
+		r = t / 2
+		for p in linePoints([x0,y0],[x1,y1])
+			self.dsp.fillEllipse p[0]-r,p[1]-r,t,t,c
+		end for
+	else
+		self.dsp.line x0,y0,x1,y1,c,t
+	end if
 end function
 
 Overlay.clearRect = function(x,y,w,h)
@@ -543,6 +551,56 @@ max = function(a,b)
 	else 
 		return b
 	end if
+end function
+
+signFactor = function(n)
+	if n >= 0 then
+		return 1
+	else
+		return -1
+	end if
+end function
+
+linePoints = function(p0,p1)
+	points = []
+	// Get values
+	if p0 isa map then
+		x0 = p0.x
+		y0 = p0.y
+	else
+		x0 = p0[0]
+		y0 = p0[1]
+	end if
+	if p1 isa map then
+		x1 = p1.x
+		y1 = p1.y
+	else
+		x1 = p1[0]
+		y1 = p1[1]
+	end if
+	// Calculate deltas and distances
+	dx = x1 - x0
+	dy = y1 - y0
+	lenX = abs(dx)
+	lenY = abs(dy)
+	// Choose strategy depending on longer length
+	if lenX >= lenY then
+		step = signFactor(dx)
+		for x in range(x0,x1,step)
+			f = (x - x0) / dx
+			y = y0 + (dy * f)
+			points.push [x,y]
+		end for
+	else
+		step = signFactor(dy)
+		for y in range(y0,y1,step)
+			f = (y - y0) / dy
+			x = x0 + (dx * f)
+			points.push [x,y]
+		end for
+	end if
+	// Return points
+	return points
 end function
 
 // === COLOR-STRING
