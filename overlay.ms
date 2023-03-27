@@ -74,7 +74,9 @@ Overlay.setup = function(displayNr)
 	display(displayNr).mode = displayMode.pixel
 	self.dsp = display(displayNr)
 	// Clear
-	if CLEAR_AT_STARTUP or freshSetup then self.clear
+	if CLEAR_AT_STARTUP or freshSetup then 
+		self.dsp.clear
+	end if
 	// Init
 	self.lastX = -1
 	self.lastY = -1
